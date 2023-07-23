@@ -115,7 +115,6 @@ def getChat():
     chats = mongo.db.chats
     chat_documents = chats.find({"mail": getemail})
     chat_list = [chat_doc["chat"] for chat_doc in chat_documents]
-
     return jsonify(chat_list)
 
 if __name__ == '__main__':
