@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
-from werkzeug.security import generate_password_hash, check_password_hash
+# from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask_bcrypt import Bcrypt
 from flask_pymongo import PyMongo
@@ -38,10 +38,8 @@ def register():
     if user:
         return jsonify({"message": "User already registered"}), 200
 
-    password_hash = generate_password_hash(password, method='bcrypt', salt_length=3)
-    data["password"]=password_hash
-    # password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    # data["password"] = password_hash.decode('utf-8')
+    password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    data["password"] = password_hash
 
     users=mongo.db.users
     users.insert_one(data)
@@ -66,25 +64,15 @@ def login():
 
     stored_password_hash = user["password"]
 
-    if check_password_hash(stored_password_hash, password):
+    if bcrypt.check_password_hash(stored_password_hash, password):
         token_payload = {"email": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=4)}
         jwt_token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
-        if(jwt_token):
-            getemail=email
-        name=user['name']  
-        # print(name)
-        return jsonify({"token": jwt_token,"message":"Logged in Successfully","name":name}), 200
+        if jwt_token:
+            getemail = email
+        name = user['name']
+        return jsonify({"token": jwt_token, "message": "Logged in Successfully", "name": name}), 200
     else:
         return jsonify({"message": "Invalid credentials"}), 200
-    # if bcrypt.checkpw(password.encode('utf-8'), stored_password_hash.encode('utf-8')):
-    #     token_payload = {"email": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=4)}
-    #     jwt_token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
-    #     if jwt_token:
-    #         getemail = email
-    #     name = user['name']
-    #     return jsonify({"token": jwt_token, "message": "Logged in Successfully", "name": name}), 200
-    # else:
-    #     return jsonify({"message": "Invalid credentials"}), 200
 
 
 # //====================from here chat start=================
