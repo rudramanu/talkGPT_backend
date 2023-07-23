@@ -23,7 +23,6 @@ socketio = SocketIO(app,cors_allowed_origins='*')
 app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app)
 
-
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
