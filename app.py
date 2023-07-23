@@ -3,8 +3,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
-
-from flask_cors import CORS
+import bcrypt
 from flask_pymongo import PyMongo
 import datetime
 import jwt
@@ -13,6 +12,7 @@ import openai
 load_dotenv()
 
 app = Flask(__name__)
+
 app.config['MONGO_URI'] =os.getenv("mongo_url")
 mongo = PyMongo(app)
 CORS(app)
@@ -37,8 +37,10 @@ def register():
     if user:
         return jsonify({"message": "User already registered"}), 200
 
-    password_hash = generate_password_hash(password, method='scrypt', salt_length=3)
+    password_hash = generate_password_hash(password, method='bcrypt', salt_length=3)
     data["password"]=password_hash
+    # password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    # data["password"] = password_hash.decode('utf-8')
 
     users=mongo.db.users
     users.insert_one(data)
@@ -73,6 +75,15 @@ def login():
         return jsonify({"token": jwt_token,"message":"Logged in Successfully","name":name}), 200
     else:
         return jsonify({"message": "Invalid credentials"}), 200
+    # if bcrypt.checkpw(password.encode('utf-8'), stored_password_hash.encode('utf-8')):
+    #     token_payload = {"email": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=4)}
+    #     jwt_token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
+    #     if jwt_token:
+    #         getemail = email
+    #     name = user['name']
+    #     return jsonify({"token": jwt_token, "message": "Logged in Successfully", "name": name}), 200
+    # else:
+    #     return jsonify({"message": "Invalid credentials"}), 200
 
 
 # //====================from here chat start=================
