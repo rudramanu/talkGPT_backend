@@ -77,10 +77,6 @@ def login():
 
 # //====================from here chat start=================
 
-@app.route("/", methods=["GET"])
-def index():
-    return "API is working fine.."
-
 def generate_response(prompt):
 
     response = openai.ChatCompletion.create(
