@@ -37,3 +37,4 @@ six==1.16.0
 virtualenv==20.23.1
 Werkzeug==2.2.3
 wsproto==1.2.0
+gunicorn==21.2.0
