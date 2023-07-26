@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 # from werkzeug.security import generate_password_hash, check_password_hash
+import requests
 
 from flask_bcrypt import Bcrypt
 from flask_pymongo import PyMongo
@@ -77,29 +78,47 @@ def login():
 
 # //====================from here chat start=================
 
-def generate_response(prompt):
+def generate_response(question,answer):
 
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Act as a parenting influencer. You provide solutions to all parenting problems, you have to answer in the language in which the user asks you the question. While answering to them, please reply as a human not as a machine. Try to replicate the tone of example and add some emoji according to question."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": question}
         ]
     )
-    return response.choices[0].message.content
+    reply_content= response.choices[0].message.content
+    checker_payload = {
+        "question": question,
+        "answer": answer
+    }
+    checker_url = "https://powerful-tan-sarong.cyclic.app/generate"
+    checker_response = requests.post(checker_url, json=checker_payload)
+    if checker_response.status_code == 200 and "data" in checker_response.json():
+        checker_result = checker_response.json()["data"]
+    else:
+        checker_result = None
+        print("Checker error:", checker_response.json())
+
+    return reply_content, checker_result
 
 @socketio.on('message')
-def handle_message(prompt):
+def handle_message(data):
     global getemail
+    data = data.get("data", {})
+    question = data.get("question", "")
+    answer = data.get("answer", "")
     chats=mongo.db.chats
-    chats.insert_one({"mail":getemail,"chat":{ "content": prompt, "sent": True }})
-    response = generate_response(prompt)
+    chats.insert_one({"mail":getemail,"chat":{ "content": question, "sent": True }})
+    response, checker_result = generate_response(question, answer)
     emit('receive', response)  
     users = mongo.db.users
     user = users.find_one({"email": getemail})
     # print(user)
     if user:
         print(getemail)
+    if checker_result is not None:
+        pass    
     chats=mongo.db.chats
     chats.insert_one({"mail":getemail,"chat":{ "content": response, "sent": False }})
 
